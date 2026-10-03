@@ -1,0 +1,53 @@
+{
+  "name": "claude-stat",
+  "displayName": "ClaudeStat",
+  "description": "Claude Code plan usage in the VS Code status bar, with a hover breakdown of every limit window.",
+  "version": "0.1.0",
+  "publisher": "claude-stat",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awmium/claude-stat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/awmium/claude-stat/issues"
+  },
+  "homepage": "https://github.com/awmium/claude-stat#readme",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=20"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "test": "node --test test/statusline-usage.test.js test/extension.test.js"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeStat.refresh",
+        "title": "ClaudeStat: Refresh Now"
+      }
+    ],
+    "configuration": {
+      "title": "ClaudeStat",
+      "properties": {
+        "claudeStat.pollWhenStale": {
+          "type": "boolean",
+          "default": true,
+          "description": "When no Claude Code session has reported recently, fetch usage directly from the Anthropic usage endpoint. Turn this off to keep the extension entirely offline."
+        },
+        "claudeStat.staleAfterMinutes": {
+          "type": "number",
+          "default": 10,
+          "description": "Age at which the last session-reported figure is considered stale."
+        }
+      }
+    }
+  }
+}

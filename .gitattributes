@@ -1,0 +1,11 @@
+# Keep line endings deterministic for everyone who clones this.
+* text=auto eol=lf
+
+# Shell scripts must be LF or bash fails on the stray carriage return.
+*.sh text eol=lf
+
+# PowerShell is happiest with CRLF on Windows.
+*.ps1 text eol=crlf
+
+# Never touch binaries.
+*.png binary
