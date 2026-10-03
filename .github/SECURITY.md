@@ -1,6 +1,6 @@
 # Security
 
-ClaudeStat reads local Claude Code state and, optionally, makes one authenticated request
+ClaudeStats reads local Claude Code state and, optionally, makes one authenticated request
 to Anthropic. This document states exactly what it touches, so you can audit it before you
 trust it. The whole extension is ~250 lines of dependency-free JavaScript — please read it.
 
@@ -16,7 +16,7 @@ trust it. The whole extension is ~250 lines of dependency-free JavaScript — pl
 
 ## What it sends
 
-Exactly one request, and only when `claudeStat.pollWhenStale` is enabled and the cached
+Exactly one request, and only when `claudeStats.pollWhenStale` is enabled and the cached
 reading has gone stale:
 
 ```
@@ -38,7 +38,7 @@ add any.
 - On `401` the extension gives up and shows the error. It will **not** attempt a refresh,
   because refreshing would mean writing to your credentials file.
 
-**To disable all credential access**, set `claudeStat.pollWhenStale` to `false`. The
+**To disable all credential access**, set `claudeStats.pollWhenStale` to `false`. The
 extension then reads only the bridge file and makes no network calls whatsoever.
 
 ## What the bridge file contains
@@ -57,7 +57,7 @@ never transmitted anywhere.
 The status bar hover is a trusted `MarkdownString`, which means `command:` links inside it
 are clickable. Two measures prevent an untrusted value from forging one:
 
-1. `isTrusted` is scoped to a single command (`claudeStat.refresh`), not set to `true`.
+1. `isTrusted` is scoped to a single command (`claudeStats.refresh`), not set to `true`.
 2. Every interpolated value — account email, error strings, window labels — is passed
    through an escaper that neutralises `\`, `` ` ``, `[`, `]`, `|` and newlines.
 
@@ -65,10 +65,10 @@ Both are covered by tests in `test/extension.test.js`.
 
 ## What the installer changes
 
-- Copies the bridge to `~/.claude/claude-stat/statusline-usage.js`.
+- Copies the bridge to `~/.claude/claude-stats/statusline-usage.js`.
 - Sets `statusLine` in `~/.claude/settings.json`, after backing the file up to
-  `settings.json.claude-stat-backup`. If you already have a `statusLine` that is not
-  ClaudeStat's, the installer **leaves it alone** and tells you; `--force` is required to
+  `settings.json.claude-stats-backup`. If you already have a `statusLine` that is not
+  ClaudeStats's, the installer **leaves it alone** and tells you; `--force` is required to
   replace it.
 - Copies the extension into your VS Code extensions directory.
 

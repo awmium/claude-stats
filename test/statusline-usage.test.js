@@ -6,7 +6,7 @@ const path = require('path');
 const { run, render } = require('../src/bridge/statusline-usage.js');
 
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'claude-stat-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'claude-stats-'));
 }
 
 const SAMPLE = JSON.stringify({

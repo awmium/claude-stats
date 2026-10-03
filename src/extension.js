@@ -194,7 +194,7 @@ function fetchUsage() {
           Authorization: 'Bearer ' + oauth.accessToken,
           'anthropic-beta': OAUTH_BETA,
           'Content-Type': 'application/json',
-          'User-Agent': 'claude-stat/0.1.0',
+          'User-Agent': 'claude-stats/0.1.0',
         },
       },
       (response) => {
@@ -255,7 +255,7 @@ function refreshState() {
   if (fromBridge && fromBridge.updatedAt >= state.updatedAt) {
     state = Object.assign({}, fromBridge, { error: null });
   }
-  const config = vscode.workspace.getConfiguration('claudeStat');
+  const config = vscode.workspace.getConfiguration('claudeStats');
   const staleAfter = config.get('staleAfterMinutes', 10);
   const stale = !state.windows.length || ageMinutes(state.updatedAt) > staleAfter;
   if (config.get('pollWhenStale', true) && stale) {
@@ -275,7 +275,7 @@ function safeText(value) {
 
 function buildTooltip() {
   const md = new vscode.MarkdownString(undefined, true);
-  md.isTrusted = { enabledCommands: ['claudeStat.refresh'] };
+  md.isTrusted = { enabledCommands: ['claudeStats.refresh'] };
   md.supportHtml = false;
   md.appendMarkdown('**Claude Code usage**\n\n');
   if (!state.windows.length) {
@@ -301,7 +301,7 @@ function buildTooltip() {
   if (state.error && state.windows.length) {
     md.appendMarkdown('_Last refresh failed: ' + safeText(state.error) + '_\n\n');
   }
-  md.appendMarkdown('[Refresh now](command:claudeStat.refresh)');
+  md.appendMarkdown('[Refresh now](command:claudeStats.refresh)');
   return md;
 }
 
@@ -331,11 +331,11 @@ function paint() {
 function activate(context) {
   item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   item.name = 'Claude Usage';
-  item.command = 'claudeStat.refresh';
+  item.command = 'claudeStats.refresh';
   context.subscriptions.push(item);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('claudeStat.refresh', () => poll())
+    vscode.commands.registerCommand('claudeStats.refresh', () => poll())
   );
 
   // Watch the directory, not the file: an atomic write replaces the inode and drops a file watch.

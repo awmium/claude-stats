@@ -9,8 +9,8 @@ strong reason not to.
 ## Getting set up
 
 ```bash
-git clone https://github.com/awmium/claude-stat.git
-cd claude-stat
+git clone https://github.com/awmium/claude-stats.git
+cd claude-stats
 npm test
 ```
 
@@ -71,7 +71,7 @@ documented in [SECURITY.md](SECURITY.md). Adding a fourth is a design discussion
 
 ## Shipping a release
 
-ClaudeStat is distributed from this repository only. There is no Marketplace listing and
+ClaudeStats is distributed from this repository only. There is no Marketplace listing and
 no build artifact — a release is a tag, and users re-run the installer.
 
 1. Bump `version` in `package.json`.
@@ -81,7 +81,7 @@ no build artifact — a release is a tag, and users re-run the installer.
 
 The installed extension folder is named for the version, so an upgrade would otherwise
 leave the previous one in place and VS Code would load both. The installer removes any
-older `claude-stat.claude-stat-*` directory before it writes the new one; keep that
+older `claude-stats.claude-stats-*` directory before it writes the new one; keep that
 behaviour if you touch the install scripts.
 
 ## A note on the usage endpoint

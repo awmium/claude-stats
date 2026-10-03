@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs ClaudeStat: the status line bridge and the VS Code extension.
+# Installs ClaudeStats: the status line bridge and the VS Code extension.
 #
 # Usage: ./scripts/install.sh [--target code|insiders|cursor] [--force]
 set -euo pipefail
@@ -46,12 +46,12 @@ case "$TARGET" in
   *) echo "Unknown target: $TARGET" >&2; exit 1 ;;
 esac
 
-echo "Installing ClaudeStat $VERSION"
+echo "Installing ClaudeStats $VERSION"
 echo "  Claude config : $CLAUDE_DIR"
 echo "  Extensions    : $EXTENSIONS_ROOT"
 
 # --- 1. Bridge script -------------------------------------------------------
-BRIDGE_DIR="$CLAUDE_DIR/claude-stat"
+BRIDGE_DIR="$CLAUDE_DIR/claude-stats"
 BRIDGE_TARGET="$BRIDGE_DIR/statusline-usage.js"
 mkdir -p "$BRIDGE_DIR"
 cp "$REPO_ROOT/src/bridge/statusline-usage.js" "$BRIDGE_TARGET"
@@ -79,7 +79,7 @@ if [ -f "$SETTINGS" ]; then
         echo "WARNING: you already have a statusLine configured, so it was left untouched:"
         echo "    $EXISTING"
         echo ""
-        echo "ClaudeStat needs that hook to receive usage data. Either:"
+        echo "ClaudeStats needs that hook to receive usage data. Either:"
         echo "  - chain the two commands yourself in a wrapper script, or"
         echo "  - re-run this installer with --force to replace it."
         echo ""
@@ -91,9 +91,9 @@ if [ -f "$SETTINGS" ]; then
 fi
 
 if [ "$SKIP_STATUSLINE" -eq 0 ]; then
-  if [ -f "$SETTINGS" ] && [ ! -f "$SETTINGS.claude-stat-backup" ]; then
-    cp "$SETTINGS" "$SETTINGS.claude-stat-backup"
-    echo "  [ok] settings backed up to settings.json.claude-stat-backup"
+  if [ -f "$SETTINGS" ] && [ ! -f "$SETTINGS.claude-stats-backup" ]; then
+    cp "$SETTINGS" "$SETTINGS.claude-stats-backup"
+    echo "  [ok] settings backed up to settings.json.claude-stats-backup"
   fi
   BRIDGE_TARGET="$(to_native "$BRIDGE_TARGET")" SETTINGS="$SETTINGS_NATIVE" node -e "
     const fs = require('fs');
@@ -113,12 +113,12 @@ if [ "$SKIP_STATUSLINE" -eq 0 ]; then
 fi
 
 # --- 3. Extension -----------------------------------------------------------
-EXTENSION_DIR="$EXTENSIONS_ROOT/claude-stat.claude-stat-$VERSION"
+EXTENSION_DIR="$EXTENSIONS_ROOT/claude-stats.claude-stats-$VERSION"
 
 # The folder is named for the version, so an upgrade would otherwise leave the previous
 # one behind and VS Code would load both, showing two status bar items.
 if [ -d "$EXTENSIONS_ROOT" ]; then
-  for old in "$EXTENSIONS_ROOT"/claude-stat.claude-stat-*; do
+  for old in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-*; do
     if [ -d "$old" ] && [ "$old" != "$EXTENSION_DIR" ]; then
       rm -rf "$old"
       echo "  [ok] removed previous version $(basename "$old")"

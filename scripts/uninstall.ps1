@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Removes ClaudeStat: the status line registration, the bridge, and the extension.
+    Removes ClaudeStats: the status line registration, the bridge, and the extension.
 #>
 [CmdletBinding()]
 param(
@@ -37,12 +37,12 @@ if (Test-Path $settingsPath) {
         [System.IO.File]::WriteAllText($settingsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
         Write-Host '  [ok] statusLine removed' -ForegroundColor Green
     } else {
-        Write-Host '  [skip] statusLine is not ClaudeStat, left as is' -ForegroundColor Yellow
+        Write-Host '  [skip] statusLine is not ClaudeStats, left as is' -ForegroundColor Yellow
     }
 }
 
 # --- 2. Bridge and cached data ---------------------------------------------
-foreach ($leaf in @('claude-stat', 'usage-bridge.json')) {
+foreach ($leaf in @('claude-stats', 'usage-bridge.json')) {
     $leafPath = Join-Path $claudeDir $leaf
     if (Test-Path $leafPath) {
         Remove-Item $leafPath -Recurse -Force
@@ -52,13 +52,13 @@ foreach ($leaf in @('claude-stat', 'usage-bridge.json')) {
 
 # --- 3. Extension -----------------------------------------------------------
 if (Test-Path $extensionsRoot) {
-    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stat.claude-stat-*' | ForEach-Object {
+    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stats.claude-stats-*' | ForEach-Object {
         Remove-Item $_.FullName -Recurse -Force
         Write-Host "  [ok] removed $($_.Name)" -ForegroundColor Green
     }
 }
 
 Write-Host ''
-Write-Host 'ClaudeStat removed. Restart VS Code to clear the status bar item.' -ForegroundColor Cyan
+Write-Host 'ClaudeStats removed. Restart VS Code to clear the status bar item.' -ForegroundColor Cyan
 Write-Host "Your original settings backup, if one was made, is at:"
-Write-Host "  $settingsPath.claude-stat-backup"
+Write-Host "  $settingsPath.claude-stats-backup"

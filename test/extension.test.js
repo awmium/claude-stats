@@ -7,7 +7,7 @@ const Module = require('module');
 
 // Point the extension at a throwaway config directory before it is loaded, so no
 // test ever reads or writes the developer's real Claude Code state.
-const FIXTURE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-stat-ext-'));
+const FIXTURE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-stats-ext-'));
 process.env.CLAUDE_CONFIG_DIR = FIXTURE_DIR;
 
 const ACCOUNT_UUID = 'account-under-test';
@@ -281,7 +281,7 @@ test('the hover trusts only this extension own command', () => {
   seedBridge(NORMAL_LIMITS);
   assert.deepEqual(
     fakeItem.tooltip.isTrusted,
-    { enabledCommands: ['claudeStat.refresh'] },
+    { enabledCommands: ['claudeStats.refresh'] },
     'a blanket isTrusted:true lets any interpolated text run arbitrary commands'
   );
 });

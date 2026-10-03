@@ -1,13 +1,13 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Installs ClaudeStat: the status line bridge and the VS Code extension.
+    Installs ClaudeStats: the status line bridge and the VS Code extension.
 
 .PARAMETER Target
     Which VS Code variant to install into: Code, Insiders, or Cursor.
 
 .PARAMETER Force
-    Overwrite an existing statusLine command that ClaudeStat did not create.
+    Overwrite an existing statusLine command that ClaudeStats did not create.
 #>
 [CmdletBinding()]
 param(
@@ -41,12 +41,12 @@ switch ($Target) {
     default    { $extensionsRoot = Join-Path $HOME '.vscode\extensions' }
 }
 
-Write-Host "Installing ClaudeStat $version" -ForegroundColor Cyan
+Write-Host "Installing ClaudeStats $version" -ForegroundColor Cyan
 Write-Host "  Claude config : $claudeDir"
 Write-Host "  Extensions    : $extensionsRoot"
 
 # --- 1. Bridge script -------------------------------------------------------
-$bridgeDir = Join-Path $claudeDir 'claude-stat'
+$bridgeDir = Join-Path $claudeDir 'claude-stats'
 $bridgeTarget = Join-Path $bridgeDir 'statusline-usage.js'
 New-Item -ItemType Directory -Force -Path $bridgeDir | Out-Null
 Copy-Item (Join-Path $repoRoot 'src\bridge\statusline-usage.js') $bridgeTarget -Force
@@ -77,7 +77,7 @@ if ($existing -and $existing.Value -and -not $Force) {
         Write-Warning 'You already have a statusLine configured, so it was left untouched:'
         Write-Host "    $existingCommand"
         Write-Host ''
-        Write-Host 'ClaudeStat needs that hook to receive usage data. Either:'
+        Write-Host 'ClaudeStats needs that hook to receive usage data. Either:'
         Write-Host '  - chain the two commands yourself in a wrapper script, or'
         Write-Host '  - re-run this installer with -Force to replace it.'
         Write-Host ''
@@ -87,7 +87,7 @@ if ($existing -and $existing.Value -and -not $Force) {
 }
 
 if (-not $skipStatusLine) {
-    $backup = "$settingsPath.claude-stat-backup"
+    $backup = "$settingsPath.claude-stats-backup"
     if ((Test-Path $settingsPath) -and -not (Test-Path $backup)) {
         Copy-Item $settingsPath $backup
         Write-Host "  [ok] settings backed up to $(Split-Path -Leaf $backup)" -ForegroundColor Green
@@ -105,12 +105,12 @@ if (-not $skipStatusLine) {
 }
 
 # --- 3. Extension -----------------------------------------------------------
-$extensionDir = Join-Path $extensionsRoot "claude-stat.claude-stat-$version"
+$extensionDir = Join-Path $extensionsRoot "claude-stats.claude-stats-$version"
 
 # The folder is named for the version, so an upgrade would otherwise leave the previous
 # one behind and VS Code would load both, showing two status bar items.
 if (Test-Path $extensionsRoot) {
-    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stat.claude-stat-*' |
+    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stats.claude-stats-*' |
         Where-Object { $_.FullName -ne $extensionDir } |
         ForEach-Object {
             Remove-Item $_.FullName -Recurse -Force

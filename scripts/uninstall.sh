@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Removes ClaudeStat: the status line registration, the bridge, and the extension.
+# Removes ClaudeStats: the status line registration, the bridge, and the extension.
 #
 # Usage: ./scripts/uninstall.sh [--target code|insiders|cursor]
 set -euo pipefail
@@ -41,13 +41,13 @@ if [ -f "$SETTINGS" ]; then
       fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
       console.log('  [ok] statusLine removed');
     } else {
-      console.log('  [skip] statusLine is not ClaudeStat, left as is');
+      console.log('  [skip] statusLine is not ClaudeStats, left as is');
     }
   "
 fi
 
 # --- 2. Bridge and cached data ---------------------------------------------
-for leaf in claude-stat usage-bridge.json; do
+for leaf in claude-stats usage-bridge.json; do
   if [ -e "$CLAUDE_DIR/$leaf" ]; then
     rm -rf "${CLAUDE_DIR:?}/$leaf"
     echo "  [ok] removed $leaf"
@@ -56,7 +56,7 @@ done
 
 # --- 3. Extension -----------------------------------------------------------
 if [ -d "$EXTENSIONS_ROOT" ]; then
-  for dir in "$EXTENSIONS_ROOT"/claude-stat.claude-stat-*; do
+  for dir in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-*; do
     [ -d "$dir" ] || continue
     rm -rf "$dir"
     echo "  [ok] removed $(basename "$dir")"
@@ -64,6 +64,6 @@ if [ -d "$EXTENSIONS_ROOT" ]; then
 fi
 
 echo ""
-echo "ClaudeStat removed. Restart VS Code to clear the status bar item."
+echo "ClaudeStats removed. Restart VS Code to clear the status bar item."
 echo "Your original settings backup, if one was made, is at:"
-echo "  $CLAUDE_DIR/settings.json.claude-stat-backup"
+echo "  $CLAUDE_DIR/settings.json.claude-stats-backup"

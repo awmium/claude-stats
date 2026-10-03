@@ -14,8 +14,8 @@ Initial release.
   (session hook or poll), and the account it belongs to.
 - Readings sourced from the Claude Code `statusLine` hook, with an optional poll of the
   usage endpoint when no session has reported recently.
-- `ClaudeStat: Refresh Now` command, also bound to clicking the item.
-- `claudeStat.pollWhenStale` and `claudeStat.staleAfterMinutes` settings.
+- `ClaudeStats: Refresh Now` command, also bound to clicking the item.
+- `claudeStats.pollWhenStale` and `claudeStats.staleAfterMinutes` settings.
 - Windows are defined by the account, not by a hardcoded list: rows are built from the
   server's `limits[]` array (and the hook's `rate_limits.model_scoped[]`), so a per-model
   weekly budget appears under the server's own name, and an account without one shows no
@@ -25,7 +25,7 @@ Initial release.
   Linux. The installer backs up `settings.json`, and refuses to replace a `statusLine` it
   did not create unless `--force` is given.
 - CI across Linux, macOS and Windows on Node 20 and 22.
-- The installer removes any older `claude-stat.claude-stat-*` directory before writing the
+- The installer removes any older `claude-stats.claude-stats-*` directory before writing the
   new one. The folder is named for the version, so without this an upgrade would leave the
   previous copy in place and VS Code would load both, showing two status bar items.
 

@@ -14,7 +14,7 @@ labels: bug
 - OS:
 - VS Code version:
 - Node version (`node -v`):
-- ClaudeStat version:
+- ClaudeStats version:
 - Plan type (Pro / Max / Team):
 
 **What the hover says**
