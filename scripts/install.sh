@@ -50,87 +50,51 @@ echo "Installing ClaudeStats $VERSION"
 echo "  Claude config : $CLAUDE_DIR"
 echo "  Extensions    : $EXTENSIONS_ROOT"
 
-# --- 1. Bridge script -------------------------------------------------------
-BRIDGE_DIR="$CLAUDE_DIR/claude-stats"
-BRIDGE_TARGET="$BRIDGE_DIR/statusline-usage.js"
-mkdir -p "$BRIDGE_DIR"
-cp "$REPO_ROOT/src/bridge/statusline-usage.js" "$BRIDGE_TARGET"
-chmod +x "$BRIDGE_TARGET"
-echo "  [ok] bridge installed"
-
-# --- 2. Register the status line -------------------------------------------
-SETTINGS="$CLAUDE_DIR/settings.json"
-SKIP_STATUSLINE=0
-
-SETTINGS_NATIVE="$(to_native "$SETTINGS")"
-
-if [ -f "$SETTINGS" ]; then
-  EXISTING="$(SETTINGS="$SETTINGS_NATIVE" node -e "
-    try {
-      const s = JSON.parse(require('fs').readFileSync(process.env.SETTINGS,'utf8').replace(/^﻿/,''));
-      process.stdout.write((s.statusLine && s.statusLine.command) || '');
-    } catch { process.stdout.write(''); }
-  ")"
-  case "$EXISTING" in
-    ""|*statusline-usage.js*) ;;
-    *)
-      if [ "$FORCE" -eq 0 ]; then
-        echo ""
-        echo "WARNING: you already have a statusLine configured, so it was left untouched:"
-        echo "    $EXISTING"
-        echo ""
-        echo "ClaudeStats needs that hook to receive usage data. Either:"
-        echo "  - chain the two commands yourself in a wrapper script, or"
-        echo "  - re-run this installer with --force to replace it."
-        echo ""
-        echo "The extension will still install, but will rely on polling only."
-        SKIP_STATUSLINE=1
-      fi
-      ;;
-  esac
-fi
-
-if [ "$SKIP_STATUSLINE" -eq 0 ]; then
-  if [ -f "$SETTINGS" ] && [ ! -f "$SETTINGS.claude-stats-backup" ]; then
-    cp "$SETTINGS" "$SETTINGS.claude-stats-backup"
-    echo "  [ok] settings backed up to settings.json.claude-stats-backup"
-  fi
-  BRIDGE_TARGET="$(to_native "$BRIDGE_TARGET")" SETTINGS="$SETTINGS_NATIVE" node -e "
-    const fs = require('fs');
-    const file = process.env.SETTINGS;
-    let settings = {};
-    if (fs.existsSync(file)) {
-      try { settings = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, '')); } catch {}
-    }
-    settings.statusLine = {
-      type: 'command',
-      command: 'node \"' + process.env.BRIDGE_TARGET + '\"',
-      padding: 0,
-    };
-    fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
-  "
-  echo "  [ok] statusLine registered"
-fi
+# --- 1 and 2. Bridge script and status line --------------------------------
+# src/setup.js is the same code the extension runs for "Set Up Claude Code Hook", so a
+# source install and a Marketplace install change settings.json in exactly the same way.
+SETUP_ARGS="install"
+[ "$FORCE" -eq 1 ] && SETUP_ARGS="install --force"
+# shellcheck disable=SC2086
+CLAUDE_CONFIG_DIR="$(to_native "$CLAUDE_DIR")" node "$(to_native "$REPO_ROOT/src/setup.js")" $SETUP_ARGS
 
 # --- 3. Extension -----------------------------------------------------------
-EXTENSION_DIR="$EXTENSIONS_ROOT/claude-stats.claude-stats-$VERSION"
+EXTENSION_ID="awmium.claude-stats"
+EXTENSION_DIR="$EXTENSIONS_ROOT/$EXTENSION_ID-$VERSION"
+
+if [ -d "$EXTENSION_DIR" ] && [ ! -f "$EXTENSION_DIR/.claude-stats-source-install" ]; then
+  echo "" >&2
+  echo "ClaudeStats $VERSION is already installed from the Marketplace at $EXTENSION_DIR." >&2
+  echo "Uninstall it in VS Code first if you want to run from source instead." >&2
+  exit 1
+fi
+
+# Marks a folder as written by this script, so the scripts only ever remove their own
+# copies and never a Marketplace install, which VS Code manages itself.
+MARKER=".claude-stats-source-install"
 
 # The folder is named for the version, so an upgrade would otherwise leave the previous
-# one behind and VS Code would load both, showing two status bar items.
+# one behind and VS Code would load both, showing two status bar items. Copies from
+# before 0.2.0 used the ID claude-stats.claude-stats and are always source installs.
 if [ -d "$EXTENSIONS_ROOT" ]; then
-  for old in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-*; do
-    if [ -d "$old" ] && [ "$old" != "$EXTENSION_DIR" ]; then
-      rm -rf "$old"
-      echo "  [ok] removed previous version $(basename "$old")"
-    fi
+  for old in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-* "$EXTENSIONS_ROOT/$EXTENSION_ID"-*; do
+    [ -d "$old" ] && [ "$old" != "$EXTENSION_DIR" ] || continue
+    case "$(basename "$old")" in
+      claude-stats.claude-stats-*) ;;
+      *) [ -f "$old/$MARKER" ] || continue ;;
+    esac
+    rm -rf "$old"
+    echo "  [ok] removed previous version $(basename "$old")"
   done
 fi
 
-mkdir -p "$EXTENSION_DIR/src"
-for file in package.json README.md LICENSE; do
+mkdir -p "$EXTENSION_DIR/src/bridge"
+for file in package.json README.md CHANGELOG.md LICENSE; do
   [ -f "$REPO_ROOT/$file" ] && cp "$REPO_ROOT/$file" "$EXTENSION_DIR/"
 done
-cp "$REPO_ROOT/src/extension.js" "$EXTENSION_DIR/src/"
+cp "$REPO_ROOT/src/extension.js" "$REPO_ROOT/src/setup.js" "$EXTENSION_DIR/src/"
+cp "$REPO_ROOT/src/bridge/statusline-usage.js" "$EXTENSION_DIR/src/bridge/"
+: > "$EXTENSION_DIR/$MARKER"
 
 echo "  [ok] extension installed to $EXTENSION_DIR"
 

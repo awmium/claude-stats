@@ -28,22 +28,12 @@ case "$TARGET" in
 esac
 
 # --- 1. Status line ---------------------------------------------------------
-SETTINGS="$CLAUDE_DIR/settings.json"
-if [ -f "$SETTINGS" ]; then
-  SETTINGS="$(to_native "$SETTINGS")" node -e "
-    const fs = require('fs');
-    const file = process.env.SETTINGS;
-    let settings;
-    try { settings = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, '')); } catch { process.exit(0); }
-    const cmd = (settings.statusLine && settings.statusLine.command) || '';
-    if (cmd.includes('statusline-usage.js')) {
-      delete settings.statusLine;
-      fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
-      console.log('  [ok] statusLine removed');
-    } else {
-      console.log('  [skip] statusLine is not ClaudeStats, left as is');
-    }
-  "
+# Removed only when it is ours. Same code as the extension's "Remove Claude Code Hook".
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if command -v node >/dev/null 2>&1; then
+  CLAUDE_CONFIG_DIR="$(to_native "$CLAUDE_DIR")" node "$(to_native "$REPO_ROOT/src/setup.js")" uninstall
+else
+  echo "  [skip] Node.js not found, statusLine left as is"
 fi
 
 # --- 2. Bridge and cached data ---------------------------------------------
@@ -56,8 +46,13 @@ done
 
 # --- 3. Extension -----------------------------------------------------------
 if [ -d "$EXTENSIONS_ROOT" ]; then
-  for dir in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-*; do
+  for dir in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-* "$EXTENSIONS_ROOT"/awmium.claude-stats-*; do
     [ -d "$dir" ] || continue
+    # Only copies the install script wrote; a Marketplace copy is uninstalled in VS Code.
+    case "$(basename "$dir")" in
+      claude-stats.claude-stats-*) ;;
+      *) [ -f "$dir/.claude-stats-source-install" ] || continue ;;
+    esac
     rm -rf "$dir"
     echo "  [ok] removed $(basename "$dir")"
   done
@@ -65,5 +60,7 @@ fi
 
 echo ""
 echo "ClaudeStats removed. Restart VS Code to clear the status bar item."
+echo "A copy installed from the Marketplace is left in place: uninstall it from the"
+echo "Extensions view in VS Code."
 echo "Your original settings backup, if one was made, is at:"
 echo "  $CLAUDE_DIR/settings.json.claude-stats-backup"

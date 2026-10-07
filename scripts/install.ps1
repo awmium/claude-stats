@@ -45,85 +45,58 @@ Write-Host "Installing ClaudeStats $version" -ForegroundColor Cyan
 Write-Host "  Claude config : $claudeDir"
 Write-Host "  Extensions    : $extensionsRoot"
 
-# --- 1. Bridge script -------------------------------------------------------
-$bridgeDir = Join-Path $claudeDir 'claude-stats'
-$bridgeTarget = Join-Path $bridgeDir 'statusline-usage.js'
-New-Item -ItemType Directory -Force -Path $bridgeDir | Out-Null
-Copy-Item (Join-Path $repoRoot 'src\bridge\statusline-usage.js') $bridgeTarget -Force
-Write-Host "  [ok] bridge installed" -ForegroundColor Green
-
-# --- 2. Register the status line -------------------------------------------
-$settingsPath = Join-Path $claudeDir 'settings.json'
-if (Test-Path $settingsPath) {
-    $raw = Get-Content $settingsPath -Raw
-    # Strip a UTF-8 BOM if a previous tool wrote one; ConvertFrom-Json rejects it.
-    $raw = $raw -replace '^\xEF\xBB\xBF', '' -replace "^$([char]0xFEFF)", ''
-    $settings = $raw | ConvertFrom-Json
-} else {
-    $settings = [PSCustomObject]@{}
-}
-
-$bridgeForJson = $bridgeTarget -replace '\\', '/'
-$command = "node `"$bridgeForJson`""
-$existing = $settings.PSObject.Properties['statusLine']
-
-if ($existing -and $existing.Value -and -not $Force) {
-    $existingCommand = ''
-    if ($existing.Value.PSObject.Properties['command']) {
-        $existingCommand = [string]$existing.Value.command
-    }
-    if ($existingCommand -and $existingCommand -notlike '*statusline-usage.js*') {
-        Write-Host ''
-        Write-Warning 'You already have a statusLine configured, so it was left untouched:'
-        Write-Host "    $existingCommand"
-        Write-Host ''
-        Write-Host 'ClaudeStats needs that hook to receive usage data. Either:'
-        Write-Host '  - chain the two commands yourself in a wrapper script, or'
-        Write-Host '  - re-run this installer with -Force to replace it.'
-        Write-Host ''
-        Write-Host 'The extension will still install, but will rely on polling only.'
-        $skipStatusLine = $true
-    }
-}
-
-if (-not $skipStatusLine) {
-    $backup = "$settingsPath.claude-stats-backup"
-    if ((Test-Path $settingsPath) -and -not (Test-Path $backup)) {
-        Copy-Item $settingsPath $backup
-        Write-Host "  [ok] settings backed up to $(Split-Path -Leaf $backup)" -ForegroundColor Green
-    }
-    $statusLine = [PSCustomObject]@{ type = 'command'; command = $command; padding = 0 }
-    if ($existing) {
-        $settings.statusLine = $statusLine
-    } else {
-        $settings | Add-Member -MemberType NoteProperty -Name statusLine -Value $statusLine
-    }
-    $json = $settings | ConvertTo-Json -Depth 100
-    # UTF8Encoding($false) matters: a BOM here makes Claude Code discard the file silently.
-    [System.IO.File]::WriteAllText($settingsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host "  [ok] statusLine registered" -ForegroundColor Green
+# --- 1 and 2. Bridge script and status line --------------------------------
+# src\setup.js is the same code the extension runs for "Set Up Claude Code Hook", so a
+# source install and a Marketplace install change settings.json in exactly the same way.
+$setupArgs = @('install')
+if ($Force) { $setupArgs += '--force' }
+$previousConfigDir = $env:CLAUDE_CONFIG_DIR
+$env:CLAUDE_CONFIG_DIR = $claudeDir
+try {
+    & node (Join-Path $repoRoot 'src\setup.js') @setupArgs
+    if ($LASTEXITCODE -ne 0) { throw 'Registering the statusLine failed; see the message above.' }
+} finally {
+    $env:CLAUDE_CONFIG_DIR = $previousConfigDir
 }
 
 # --- 3. Extension -----------------------------------------------------------
-$extensionDir = Join-Path $extensionsRoot "claude-stats.claude-stats-$version"
+$extensionId = 'awmium.claude-stats'
+$extensionDir = Join-Path $extensionsRoot "$extensionId-$version"
+# Marks a folder as written by this script, so the scripts only ever remove their own
+# copies and never a Marketplace install, which VS Code manages itself.
+$marker = '.claude-stats-source-install'
+
+if ((Test-Path $extensionDir) -and -not (Test-Path (Join-Path $extensionDir $marker))) {
+    throw "ClaudeStats $version is already installed from the Marketplace at $extensionDir. Uninstall it in VS Code first if you want to run from source instead."
+}
 
 # The folder is named for the version, so an upgrade would otherwise leave the previous
-# one behind and VS Code would load both, showing two status bar items.
+# one behind and VS Code would load both, showing two status bar items. Copies from
+# before 0.2.0 used the ID claude-stats.claude-stats and are always source installs.
 if (Test-Path $extensionsRoot) {
-    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stats.claude-stats-*' |
-        Where-Object { $_.FullName -ne $extensionDir } |
+    Get-ChildItem $extensionsRoot -Directory |
+        Where-Object {
+            $_.Name -ne (Split-Path -Leaf $extensionDir) -and (
+                $_.Name -like 'claude-stats.claude-stats-*' -or
+                ($_.Name -like "$extensionId-*" -and (Test-Path (Join-Path $_.FullName $marker)))
+            )
+        } |
         ForEach-Object {
             Remove-Item $_.FullName -Recurse -Force
             Write-Host "  [ok] removed previous version $($_.Name)" -ForegroundColor Green
         }
 }
 
-New-Item -ItemType Directory -Force -Path (Join-Path $extensionDir 'src') | Out-Null
-foreach ($file in @('package.json', 'README.md', 'LICENSE')) {
+New-Item -ItemType Directory -Force -Path (Join-Path $extensionDir 'src\bridge') | Out-Null
+foreach ($file in @('package.json', 'README.md', 'CHANGELOG.md', 'LICENSE')) {
     $source = Join-Path $repoRoot $file
     if (Test-Path $source) { Copy-Item $source $extensionDir -Force }
 }
-Copy-Item (Join-Path $repoRoot 'src\extension.js') (Join-Path $extensionDir 'src') -Force
+foreach ($file in @('extension.js', 'setup.js')) {
+    Copy-Item (Join-Path $repoRoot "src\$file") (Join-Path $extensionDir 'src') -Force
+}
+Copy-Item (Join-Path $repoRoot 'src\bridge\statusline-usage.js') (Join-Path $extensionDir 'src\bridge') -Force
+New-Item -ItemType File -Force -Path (Join-Path $extensionDir $marker) | Out-Null
 Write-Host "  [ok] extension installed to $extensionDir" -ForegroundColor Green
 
 Write-Host ''

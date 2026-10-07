@@ -1,10 +1,20 @@
 {
   "name": "claude-stats",
   "displayName": "ClaudeStats",
-  "description": "Claude Code plan usage in the VS Code status bar, with a hover breakdown of every limit window.",
-  "version": "0.1.0",
-  "publisher": "claude-stats",
+  "description": "See your Claude Code plan usage in the status bar: session and weekly limits at a glance, with every window and its reset time on hover.",
+  "version": "0.2.0",
+  "publisher": "awmium",
+  "author": {
+    "name": "Azmir Murad"
+  },
   "license": "MIT",
+  "icon": "assets/icon.png",
+  "galleryBanner": {
+    "color": "#141311",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "qna": "https://github.com/awmium/claude-stats/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/awmium/claude-stats.git"
@@ -18,20 +28,42 @@
     "node": ">=20"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "usage",
+    "status bar",
+    "rate limit"
   ],
   "main": "./src/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
   "scripts": {
-    "test": "node --test test/statusline-usage.test.js test/extension.test.js"
+    "test": "node --test test/statusline-usage.test.js test/extension.test.js test/setup.test.js test/onboarding.test.js"
   },
   "contributes": {
     "commands": [
       {
         "command": "claudeStats.refresh",
         "title": "ClaudeStats: Refresh Now"
+      },
+      {
+        "command": "claudeStats.setup",
+        "title": "ClaudeStats: Set Up Claude Code Hook"
+      },
+      {
+        "command": "claudeStats.removeHook",
+        "title": "ClaudeStats: Remove Claude Code Hook"
       }
     ],
     "configuration": {

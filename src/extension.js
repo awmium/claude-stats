@@ -3,6 +3,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const https = require('https');
+const setup = require('./setup');
+
+const VERSION = require('../package.json').version;
 
 const USAGE_HOST = 'api.anthropic.com';
 const USAGE_PATH = '/api/oauth/usage';
@@ -194,7 +197,7 @@ function fetchUsage() {
           Authorization: 'Bearer ' + oauth.accessToken,
           'anthropic-beta': OAUTH_BETA,
           'Content-Type': 'application/json',
-          'User-Agent': 'claude-stats/0.1.0',
+          'User-Agent': 'claude-stats/' + VERSION,
         },
       },
       (response) => {
@@ -328,6 +331,181 @@ function paint() {
   item.show();
 }
 
+const REPO_URL = 'https://github.com/awmium/claude-stats';
+const LEGACY_ID = 'claude-stats.claude-stats';
+const PROMPTED_KEY = 'claudeStats.setupPromptedVersion';
+const REMOVED_KEY = 'claudeStats.hookRemovedByUser';
+const LEGACY_WARNED_KEY = 'claudeStats.legacyWarnedVersion';
+const WRAPPER_FED_DAYS = 7;
+
+function openLink(anchor) {
+  return vscode.env.openExternal(vscode.Uri.parse(REPO_URL + anchor));
+}
+
+// A foreign statusLine that still produces fresh readings is a wrapper calling our bridge,
+// so there is nothing to set up.
+function wrapperFeedsBridge() {
+  const record = readJson(bridgePath());
+  return Boolean(record && record.updatedAt && Date.now() - record.updatedAt < WRAPPER_FED_DAYS * 86400000);
+}
+
+async function runSetup(context, force) {
+  const store = context && context.globalState;
+  let result;
+  try {
+    result = setup.install({ force });
+  } catch (err) {
+    vscode.window.showErrorMessage('ClaudeStats could not set up the hook: ' + err.message);
+    return result;
+  }
+  const where = result.paths.claudeDir;
+  switch (result.status) {
+    case 'installed':
+    case 'replaced':
+    case 'unchanged': {
+      if (store) await store.update(REMOVED_KEY, false);
+      let message =
+        result.status === 'unchanged'
+          ? 'The ClaudeStats hook is already set up in Claude Code.'
+          : 'ClaudeStats is now hooked into Claude Code. Send one message in Claude Code for the first reading.';
+      if (!setup.nodeOnPath()) {
+        message +=
+          ' Claude Code runs the hook with node, which was not found on the PATH VS Code sees. If the status bar stays on a dash, install Node 20 or newer.';
+      }
+      vscode.window.showInformationMessage(message);
+      break;
+    }
+    case 'no-claude-dir':
+      vscode.window.showWarningMessage(
+        'Claude Code config directory not found at ' + where + '. Install and sign in to Claude Code first, then run "ClaudeStats: Set Up Claude Code Hook".'
+      );
+      break;
+    case 'settings-unreadable':
+      vscode.window.showErrorMessage(
+        result.paths.settings + ' is not valid JSON, so ClaudeStats left it untouched. Fix the file, then run "ClaudeStats: Set Up Claude Code Hook" again.'
+      );
+      break;
+    case 'foreign': {
+      const choice = await vscode.window.showWarningMessage(
+        'You already have a Claude Code status line, and Claude Code allows only one.',
+        {
+          modal: true,
+          detail:
+            'Current statusLine: ' + result.command + '\n\n' +
+            'ClaudeStats left it untouched. To keep both, point statusLine at a small wrapper script that passes Claude Code\'s input to both commands (the README shows one). ' +
+            'Or replace it: your original settings.json is kept as settings.json.claude-stats-backup.',
+        },
+        'Replace anyway',
+        'Show wrapper example'
+      );
+      if (choice === 'Replace anyway') return runSetup(context, true);
+      if (choice === 'Show wrapper example') openLink('#already-using-a-custom-status-line');
+      break;
+    }
+  }
+  return result;
+}
+
+async function removeHook(context) {
+  const store = context && context.globalState;
+  let result;
+  try {
+    result = setup.uninstall({ removeFiles: true });
+  } catch (err) {
+    vscode.window.showErrorMessage('ClaudeStats could not remove the hook: ' + err.message);
+    return result;
+  }
+  if (result.status === 'settings-unreadable') {
+    vscode.window.showErrorMessage(result.paths.settings + ' is not valid JSON, so ClaudeStats left it untouched.');
+    return result;
+  }
+  if (store) await store.update(REMOVED_KEY, true);
+  if (result.status === 'removed') {
+    vscode.window.showInformationMessage(
+      'Removed the ClaudeStats hook from Claude Code. Run "ClaudeStats: Set Up Claude Code Hook" to add it back.'
+    );
+  } else if (result.status === 'foreign') {
+    vscode.window.showInformationMessage(
+      'Your Claude Code status line is not the ClaudeStats hook, so it was left as is.'
+    );
+  } else {
+    vscode.window.showInformationMessage('No ClaudeStats hook is registered with Claude Code.');
+  }
+  return result;
+}
+
+// Asks at most once per version, and never again after the user removed the hook on
+// purpose. The command stays available either way.
+async function offerSetup(context) {
+  let info;
+  try {
+    info = setup.inspect();
+  } catch {
+    return;
+  }
+  if (!info.claudeDirExists) return;
+  if (info.hook === 'ours') {
+    try {
+      setup.syncBridge();
+    } catch {
+      // A failed sync leaves the previous bridge running, which still works.
+    }
+    return;
+  }
+  if (info.hook === 'foreign' && wrapperFeedsBridge()) return;
+
+  const store = context && context.globalState;
+  if (!store) return;
+  if (store.get(REMOVED_KEY)) return;
+  if (store.get(PROMPTED_KEY) === VERSION) return;
+  await store.update(PROMPTED_KEY, VERSION);
+
+  const choice = await vscode.window.showInformationMessage(
+    'ClaudeStats needs to register a small status line hook with Claude Code. Set up now?',
+    'Set up',
+    'Not now',
+    'Learn more'
+  );
+  if (choice === 'Set up') await runSetup(context, false);
+  else if (choice === 'Learn more') openLink('#how-it-works');
+}
+
+// A copy installed from source before 0.2.0 has a different extension ID, so VS Code runs
+// it alongside this one and the user sees two status bar items.
+async function warnAboutLegacyCopy(context) {
+  const ownId = context && context.extension && context.extension.id;
+  if (!vscode.extensions || ownId === LEGACY_ID) return;
+  const legacy = vscode.extensions.getExtension(LEGACY_ID);
+  if (!legacy) return;
+  const store = context.globalState;
+  if (store) {
+    if (store.get(LEGACY_WARNED_KEY) === VERSION) return;
+    await store.update(LEGACY_WARNED_KEY, VERSION);
+  }
+  const choice = await vscode.window.showWarningMessage(
+    'An older ClaudeStats installed from source (' + LEGACY_ID + ') is also running, so you will see two status bar items. Remove the old copy?',
+    'Remove old copy',
+    'Not now'
+  );
+  if (choice !== 'Remove old copy') return;
+  const folder = legacy.extensionPath;
+  if (!/^claude-stats\.claude-stats-/.test(path.basename(folder))) {
+    vscode.window.showWarningMessage('ClaudeStats did not recognise the old copy at ' + folder + ', so it was left alone.');
+    return;
+  }
+  try {
+    fs.rmSync(folder, { recursive: true, force: true });
+  } catch (err) {
+    vscode.window.showErrorMessage('Could not remove ' + folder + ': ' + err.message);
+    return;
+  }
+  const reload = await vscode.window.showInformationMessage(
+    'Removed the old copy. Reload the window to drop its status bar item.',
+    'Reload Window'
+  );
+  if (reload === 'Reload Window') vscode.commands.executeCommand('workbench.action.reloadWindow');
+}
+
 function activate(context) {
   item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   item.name = 'Claude Usage';
@@ -335,7 +513,9 @@ function activate(context) {
   context.subscriptions.push(item);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('claudeStats.refresh', () => poll())
+    vscode.commands.registerCommand('claudeStats.refresh', () => poll()),
+    vscode.commands.registerCommand('claudeStats.setup', () => runSetup(context, false)),
+    vscode.commands.registerCommand('claudeStats.removeHook', () => removeHook(context))
   );
 
   // Watch the directory, not the file: an atomic write replaces the inode and drops a file watch.
@@ -352,6 +532,10 @@ function activate(context) {
   context.subscriptions.push({ dispose: () => clearInterval(timer) });
 
   refreshState();
+
+  // Onboarding never blocks activation or the first paint.
+  Promise.resolve().then(() => warnAboutLegacyCopy(context)).catch(() => {});
+  Promise.resolve().then(() => offerSetup(context)).catch(() => {});
 }
 
 function deactivate() {}
@@ -359,6 +543,9 @@ function deactivate() {}
 module.exports = {
   activate,
   deactivate,
+  offerSetup,
+  runSetup,
+  removeHook,
   normalize,
   relative,
   toEpochMs,

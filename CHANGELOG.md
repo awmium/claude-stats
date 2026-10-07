@@ -3,7 +3,51 @@
 All notable changes to this project are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] — 2026-10-03
+## [0.2.0] - 2026-10-07
+
+First Visual Studio Marketplace release.
+
+### Added
+
+- The extension sets up its own Claude Code hook, so a Marketplace install works without
+  cloning the repo. On first start a single non-modal notification asks to register it
+  (Set up / Not now / Learn more), at most once per version and never again after you
+  remove the hook on purpose.
+- `ClaudeStats: Set Up Claude Code Hook` and `ClaudeStats: Remove Claude Code Hook`
+  commands.
+- Setup makes the same change as the install script: the bridge is copied to
+  `~/.claude/claude-stats/`, `settings.json` is backed up once to
+  `settings.json.claude-stats-backup`, and `statusLine` is pointed at the bridge.
+  `CLAUDE_CONFIG_DIR` is honoured. A `statusLine` that is not ours is left alone; the
+  extension explains the wrapper option and offers a confirmed **Replace anyway**.
+- The installed bridge is kept in step with the extension after an update, but only while
+  the registered hook is still ours.
+- A warning, with an offer to remove it, when a pre-0.2.0 source install
+  (`claude-stats.claude-stats`) is running next to this copy.
+- Marketplace packaging: icon, gallery banner, keywords, categories and a `.vscodeignore`
+  that ships only the runtime files.
+
+### Changed
+
+- Publisher is now `awmium`, so the extension ID is `awmium.claude-stats`. Source installs
+  go to `awmium.claude-stats-<version>` and the installer removes any old
+  `claude-stats.claude-stats-*` folder.
+- The install and uninstall scripts now call `src/setup.js` for the `settings.json`
+  change, the same code the extension runs, instead of their own inline copies.
+- The installers only remove extension folders they created (marked with
+  `.claude-stats-source-install`), never a Marketplace copy, and refuse to overwrite a
+  Marketplace copy of the same version.
+- `settings.json` is written atomically, through a temporary file and a rename.
+- The poll's `User-Agent` carries the real version instead of a fixed `0.1.0`.
+
+### Fixed
+
+- An unparseable `settings.json` is reported and left untouched. Previously the shell installer
+  replaced it with a file holding only the `statusLine`, dropping every other setting.
+- The PowerShell installer no longer deletes the folder it is about to reinstall when the
+  home path is in 8.3 short form.
+
+## [0.1.0] - 2026-10-03
 
 Initial release.
 

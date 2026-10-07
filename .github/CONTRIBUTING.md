@@ -43,7 +43,8 @@ real captured `/api/oauth/usage` response in `test/extension.test.js` to follow.
 ## Project layout
 
 ```
-src/extension.js             the VS Code extension (status bar item, hover, poll)
+src/extension.js             the VS Code extension (status bar item, hover, poll, first-run prompt)
+src/setup.js                 registers and removes the hook; shared by the extension and scripts
 src/bridge/                  the Claude Code statusLine hook
 test/                        node:test suites
 scripts/                     install and uninstall, per platform
@@ -67,22 +68,31 @@ from the usage poll, and they must produce identical output. A change to one alm
 needs the other.
 
 **Don't widen what the extension reads.** It touches three files and one endpoint, all
-documented in [SECURITY.md](SECURITY.md). Adding a fourth is a design discussion, not a PR.
+documented in [SECURITY.md](SECURITY.md), plus `settings.json` and the bridge folder when
+the user sets up or removes the hook. Adding another is a design discussion, not a PR.
+
+**One copy of the setup logic.** `src/setup.js` is the only code that edits
+`settings.json`. The extension calls it as a module and the install scripts call it as a
+CLI (`node src/setup.js install [--force]`, `node src/setup.js uninstall`). Change it
+there, test it in `test/setup.test.js`, and both routes follow.
 
 ## Shipping a release
 
-ClaudeStats is distributed from this repository only. There is no Marketplace listing and
-no build artifact — a release is a tag, and users re-run the installer.
+ClaudeStats ships two ways: the Visual Studio Marketplace (`awmium.claude-stats`) and this
+repository's install scripts. The step-by-step publishing guide is
+[PUBLISHING.md](PUBLISHING.md).
 
 1. Bump `version` in `package.json`.
 2. Add a `CHANGELOG.md` entry.
 3. `npm test` green on all three platforms in CI.
-4. `git tag v0.1.1 && git push --tags`.
+4. `npx @vscode/vsce package` with no warnings, then publish as in PUBLISHING.md.
+5. `git tag v0.2.1 && git push --tags`.
 
 The installed extension folder is named for the version, so an upgrade would otherwise
-leave the previous one in place and VS Code would load both. The installer removes any
-older `claude-stats.claude-stats-*` directory before it writes the new one; keep that
-behaviour if you touch the install scripts.
+leave the previous one in place and VS Code would load both. The installer removes older
+folders it wrote itself (marked with `.claude-stats-source-install`) and any pre-0.2.0
+`claude-stats.claude-stats-*` folder, and never a Marketplace copy. Keep that behaviour
+if you touch the install scripts.
 
 ## A note on the usage endpoint
 

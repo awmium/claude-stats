@@ -9,6 +9,7 @@ trust it. The whole extension is ~250 lines of dependency-free JavaScript — pl
 | Path | Why | Written? |
 | :-- | :-- | :-- |
 | `~/.claude/usage-bridge.json` | The cached reading from the statusLine hook | Written by the bridge only |
+| `~/.claude/settings.json` → `statusLine` | To see whether the hook is set up | Only by setup and removal, see below |
 | `~/.claude.json` → `oauthAccount` | Account UUID and email, to label the hover and detect account switches | Never |
 | `~/.claude/.credentials.json` → `claudeAiOauth.accessToken` | Bearer token for the optional usage poll | Never |
 
@@ -63,16 +64,29 @@ are clickable. Two measures prevent an untrusted value from forging one:
 
 Both are covered by tests in `test/extension.test.js`.
 
-## What the installer changes
+## What setup changes
+
+Setup runs when you accept the first-run prompt, run `ClaudeStats: Set Up Claude Code
+Hook`, or run the install script. All three use the same code, `src/setup.js`:
 
 - Copies the bridge to `~/.claude/claude-stats/statusline-usage.js`.
 - Sets `statusLine` in `~/.claude/settings.json`, after backing the file up to
-  `settings.json.claude-stats-backup`. If you already have a `statusLine` that is not
-  ClaudeStats's, the installer **leaves it alone** and tells you; `--force` is required to
-  replace it.
-- Copies the extension into your VS Code extensions directory.
+  `settings.json.claude-stats-backup` (once; a later run never overwrites that backup).
+  The file is written through a temporary file and a rename, without a BOM.
+- If you already have a `statusLine` that is not ClaudeStats's, it is **left alone**.
+  Replacing it needs an explicit confirmation in the extension, or `--force` for the
+  script.
+- If `settings.json` is not valid JSON, nothing is written.
+- When the extension updates, it refreshes the bridge file, but only while the registered
+  `statusLine` is still ClaudeStats's.
+- The install script also copies the extension into your VS Code extensions directory.
 
-It requests no elevation and writes nothing outside your home directory.
+`ClaudeStats: Remove Claude Code Hook` removes the `statusLine` only if it is
+ClaudeStats's, and then the bridge folder and the cached reading. Setup and removal never
+read or write `.credentials.json` or `.claude.json`.
+
+Nothing requests elevation, and nothing is written outside your Claude Code config
+directory (and, for the script, your extensions directory).
 
 ## Reporting a vulnerability
 

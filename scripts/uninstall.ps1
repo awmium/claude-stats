@@ -24,21 +24,19 @@ switch ($Target) {
 }
 
 # --- 1. Status line ---------------------------------------------------------
+# Removed only when it is ours. Same code as the extension's "Remove Claude Code Hook".
+$repoRoot = Split-Path -Parent $PSScriptRoot
 $settingsPath = Join-Path $claudeDir 'settings.json'
-if (Test-Path $settingsPath) {
-    $raw = Get-Content $settingsPath -Raw
-    $raw = $raw -replace "^$([char]0xFEFF)", ''
-    $settings = $raw | ConvertFrom-Json
-    $statusLine = $settings.PSObject.Properties['statusLine']
-    if ($statusLine -and $statusLine.Value -and
-        [string]$statusLine.Value.command -like '*statusline-usage.js*') {
-        $settings.PSObject.Properties.Remove('statusLine')
-        $json = $settings | ConvertTo-Json -Depth 100
-        [System.IO.File]::WriteAllText($settingsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Host '  [ok] statusLine removed' -ForegroundColor Green
-    } else {
-        Write-Host '  [skip] statusLine is not ClaudeStats, left as is' -ForegroundColor Yellow
+if (Get-Command node -ErrorAction SilentlyContinue) {
+    $previousConfigDir = $env:CLAUDE_CONFIG_DIR
+    $env:CLAUDE_CONFIG_DIR = $claudeDir
+    try {
+        & node (Join-Path $repoRoot 'src\setup.js') uninstall
+    } finally {
+        $env:CLAUDE_CONFIG_DIR = $previousConfigDir
     }
+} else {
+    Write-Host '  [skip] Node.js not found, statusLine left as is' -ForegroundColor Yellow
 }
 
 # --- 2. Bridge and cached data ---------------------------------------------
@@ -52,13 +50,21 @@ foreach ($leaf in @('claude-stats', 'usage-bridge.json')) {
 
 # --- 3. Extension -----------------------------------------------------------
 if (Test-Path $extensionsRoot) {
-    Get-ChildItem $extensionsRoot -Directory -Filter 'claude-stats.claude-stats-*' | ForEach-Object {
-        Remove-Item $_.FullName -Recurse -Force
-        Write-Host "  [ok] removed $($_.Name)" -ForegroundColor Green
-    }
+    # Only copies the install script wrote; a Marketplace copy is uninstalled in VS Code.
+    Get-ChildItem $extensionsRoot -Directory |
+        Where-Object {
+            $_.Name -like 'claude-stats.claude-stats-*' -or
+            ($_.Name -like 'awmium.claude-stats-*' -and (Test-Path (Join-Path $_.FullName '.claude-stats-source-install')))
+        } |
+        ForEach-Object {
+            Remove-Item $_.FullName -Recurse -Force
+            Write-Host "  [ok] removed $($_.Name)" -ForegroundColor Green
+        }
 }
 
 Write-Host ''
 Write-Host 'ClaudeStats removed. Restart VS Code to clear the status bar item.' -ForegroundColor Cyan
+Write-Host 'A copy installed from the Marketplace is left in place: uninstall it from the'
+Write-Host 'Extensions view in VS Code.'
 Write-Host "Your original settings backup, if one was made, is at:"
 Write-Host "  $settingsPath.claude-stats-backup"

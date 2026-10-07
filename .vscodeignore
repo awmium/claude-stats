@@ -1,0 +1,9 @@
+**
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!assets/icon.png
+!src/extension.js
+!src/setup.js
+!src/bridge/statusline-usage.js
