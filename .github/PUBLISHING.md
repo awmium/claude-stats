@@ -3,7 +3,7 @@
 How ClaudeStats gets onto the Visual Studio Marketplace (and, optionally, Open VSX for
 Cursor and other VS Code forks). Only the maintainer, Azmir Murad, runs these steps.
 
-The extension ID is `awmium.claude-stats`: publisher `awmium`, name `claude-stats`.
+The extension ID is `awmium.claude-stats-statusbar`: publisher `awmium`, name `claude-stats-statusbar` (the name `claude-stats` is taken on the Marketplace by another publisher).
 
 ## Once: create the publisher
 
@@ -44,7 +44,7 @@ Marketplace page shows a broken image until it exists.
 
 `vsce publish` uses the `version` in `package.json`; bump it and add a `CHANGELOG.md`
 entry first. The listing usually appears within a few minutes at
-https://marketplace.visualstudio.com/items?itemName=awmium.claude-stats.
+https://marketplace.visualstudio.com/items?itemName=awmium.claude-stats-statusbar.
 
 To test a build locally before publishing:
 

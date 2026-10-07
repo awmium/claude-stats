@@ -78,7 +78,7 @@ there, test it in `test/setup.test.js`, and both routes follow.
 
 ## Shipping a release
 
-ClaudeStats ships two ways: the Visual Studio Marketplace (`awmium.claude-stats`) and this
+ClaudeStats ships two ways: the Visual Studio Marketplace (`awmium.claude-stats-statusbar`) and this
 repository's install scripts. The step-by-step publishing guide is
 [PUBLISHING.md](PUBLISHING.md).
 

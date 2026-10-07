@@ -29,8 +29,8 @@ First Visual Studio Marketplace release.
 
 ### Changed
 
-- Publisher is now `awmium`, so the extension ID is `awmium.claude-stats`. Source installs
-  go to `awmium.claude-stats-<version>` and the installer removes any old
+- Publisher is now `awmium`, so the extension ID is `awmium.claude-stats-statusbar`. Source installs
+  go to `awmium.claude-stats-statusbar-<version>` and the installer removes any old
   `claude-stats.claude-stats-*` folder.
 - The install and uninstall scripts now call `src/setup.js` for the `settings.json`
   change, the same code the extension runs, instead of their own inline copies.

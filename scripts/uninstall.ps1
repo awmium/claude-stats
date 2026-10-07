@@ -54,7 +54,7 @@ if (Test-Path $extensionsRoot) {
     Get-ChildItem $extensionsRoot -Directory |
         Where-Object {
             $_.Name -like 'claude-stats.claude-stats-*' -or
-            ($_.Name -like 'awmium.claude-stats-*' -and (Test-Path (Join-Path $_.FullName '.claude-stats-source-install')))
+            ($_.Name -like 'awmium.claude-stats-statusbar-*' -and (Test-Path (Join-Path $_.FullName '.claude-stats-source-install')))
         } |
         ForEach-Object {
             Remove-Item $_.FullName -Recurse -Force

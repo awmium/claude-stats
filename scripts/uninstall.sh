@@ -46,7 +46,7 @@ done
 
 # --- 3. Extension -----------------------------------------------------------
 if [ -d "$EXTENSIONS_ROOT" ]; then
-  for dir in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-* "$EXTENSIONS_ROOT"/awmium.claude-stats-*; do
+  for dir in "$EXTENSIONS_ROOT"/claude-stats.claude-stats-* "$EXTENSIONS_ROOT"/awmium.claude-stats-statusbar-*; do
     [ -d "$dir" ] || continue
     # Only copies the install script wrote; a Marketplace copy is uninstalled in VS Code.
     case "$(basename "$dir")" in

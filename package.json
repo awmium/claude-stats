@@ -1,5 +1,5 @@
 {
-  "name": "claude-stats",
+  "name": "claude-stats-statusbar",
   "displayName": "ClaudeStats",
   "description": "See your Claude Code plan usage in the status bar: session and weekly limits at a glance, with every window and its reset time on hover.",
   "version": "0.2.0",

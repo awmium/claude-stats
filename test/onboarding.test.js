@@ -81,7 +81,7 @@ function memento(initial) {
 }
 
 function context(initial) {
-  return { subscriptions: [], globalState: memento(initial), extension: { id: 'awmium.claude-stats' } };
+  return { subscriptions: [], globalState: memento(initial), extension: { id: 'awmium.claude-stats-statusbar' } };
 }
 
 const PROMPT = 'ClaudeStats needs to register a small status line hook with Claude Code. Set up now?';

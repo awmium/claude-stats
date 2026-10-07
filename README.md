@@ -23,7 +23,7 @@ the hook with `node`), and VS Code 1.85+.
 Search for **ClaudeStats** in the Extensions view, or:
 
 ```bash
-code --install-extension awmium.claude-stats
+code --install-extension awmium.claude-stats-statusbar
 ```
 
 On first start it asks once: *ClaudeStats needs to register a small status line hook with
@@ -139,7 +139,7 @@ is a few hundred lines of dependency-free JavaScript. Have a read.
 **Nothing in the status bar.** Quit VS Code fully rather than reloading. Still nothing?
 `Ctrl+Shift+P` → *Developer: Show Running Extensions* and look for ClaudeStats. If you
 installed from source and it's not there, check the folder exists with
-`ls ~/.vscode/extensions/awmium.claude-stats-*` and re-run the installer.
+`ls ~/.vscode/extensions/awmium.claude-stats-statusbar-*` and re-run the installer.
 
 **Two status bar items.** An old source install (`claude-stats.claude-stats-*`) is running
 next to a newer copy. Accept the offer to remove it, or re-run the install script.

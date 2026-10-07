@@ -60,7 +60,7 @@ try {
 }
 
 # --- 3. Extension -----------------------------------------------------------
-$extensionId = 'awmium.claude-stats'
+$extensionId = 'awmium.claude-stats-statusbar'
 $extensionDir = Join-Path $extensionsRoot "$extensionId-$version"
 # Marks a folder as written by this script, so the scripts only ever remove their own
 # copies and never a Marketplace install, which VS Code manages itself.

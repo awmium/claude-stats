@@ -59,7 +59,7 @@ SETUP_ARGS="install"
 CLAUDE_CONFIG_DIR="$(to_native "$CLAUDE_DIR")" node "$(to_native "$REPO_ROOT/src/setup.js")" $SETUP_ARGS
 
 # --- 3. Extension -----------------------------------------------------------
-EXTENSION_ID="awmium.claude-stats"
+EXTENSION_ID="awmium.claude-stats-statusbar"
 EXTENSION_DIR="$EXTENSIONS_ROOT/$EXTENSION_ID-$VERSION"
 
 if [ -d "$EXTENSION_DIR" ] && [ ! -f "$EXTENSION_DIR/.claude-stats-source-install" ]; then
