@@ -1,6 +1,7 @@
 # ClaudeStats
 
 [![test](https://github.com/awmium/claude-stats/actions/workflows/test.yml/badge.svg)](https://github.com/awmium/claude-stats/actions/workflows/test.yml)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-ClaudeStats-5951D8)](https://marketplace.visualstudio.com/items?itemName=awmium.claude-stats-statusbar)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Your Claude Code usage, sitting in the VS Code status bar where you'll actually see it.
@@ -20,7 +21,7 @@ the hook with `node`), and VS Code 1.85+.
 
 ### From the Marketplace
 
-Search for **ClaudeStats** in the Extensions view, or:
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=awmium.claude-stats-statusbar): search for **ClaudeStats** in the Extensions view, or:
 
 ```bash
 code --install-extension awmium.claude-stats-statusbar
